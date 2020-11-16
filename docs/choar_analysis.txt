@@ -1,0 +1,121 @@
+
+- 1,2,3,5 ve 6. adımlar örneğin keçiye hizalanmış haline de uygulanıyor
+
+*trvposoar.bed : koyun için belirteç pozisyonlar (koyun-keçi mitokondri referansları arasında uyumsuzluk gösteren pozisyonların transversiyonlarla sınırlanmış, polimorfik pozisyonlar çıkarılmış hali)
+*samp_oar.bam : örneğin koyun mitokondri referansına hizalanmış hali
+
+1)
+samtools sort samp_oar.bam > s_samp_oar.bam
+
+samtools index s_samp_oar.bam
+
+2)belirteç pozisyonları çağır, referanstan farklı olan transitionları ele
+
+bcftools mpileup -B -f oarreference.fasta -R trvposoar.bed s_samp_oar.bam | bcftools call -mV indels -A --ploidy 1 | bcftools query -f '%CHROM %POS %REF %ALT\n' | cat | tr ' ' '\t' | awk '!( $3 == "T" && $4 == "C" || $3 == "C" && $4 == "T" || $3 == "A" && $4 == "G" || $3 == "G" && $4 == "A" ) ' | awk '{print $1,$2-1,$2,$4}' | cat | tr ' ' '\t' > transvoar_samp.bed
+
+3)
+bedtools bamtobed -i bamfile > samp_oarbtb.bed 
+
+4)koyun ve keçiye hizalanmış ortak okumaları bul 
+
+Rscript --vanilla sharead.R samp_chibtb.bed  samp_oarbtb.bed sha.chi.bed sha.oar.bed
+
+
+* sharead.R :
+
+#!/usr/bin/env Rscript
+
+args = commandArgs(TRUE)
+
+
+sharead = function(chidata,oardata,sh_chifile,sh_oarfile) {
+  chi_btb=read.table(chidata, sep = "\t")
+  oar_btb=read.table(oardata,sep = "\t")
+  oar_btb$id= 1: nrow(oar_btb)
+  shared2=merge(chi_btb,oar_btb, by="V4")
+  pshared=shared2[order(shared2$id),]
+  sh_chi=data.frame("v1"= pshared$V1.x, "v2"=pshared$V2.x, "v3"=pshared$V3.x,     "v4"=pshared$V4, "v5"=pshared$V5.x, "v6"=pshared$V6.x)
+  sh_oar=data.frame("v1"= pshared$V1.y, "v2"=pshared$V2.y, "v3"=pshared$V3.y, "v4"=pshared$V4, "v5"=pshared$V5.y, "v6"=pshared$V6.y)
+  write.table(sh_chi,file = sh_chifile, sep = "\t", col.names = F,row.names = F, quote = F)
+  write.table(sh_oar,file = sh_oarfile, sep = "\t", col.names = F,row.names = F, quote = F)
+  
+}
+
+
+sharead(args[1],args[2],args[3],args[4])
+
+
+5)ortak okumalara denk gelen belirteç pozisyonlarda alternatif alelleri "N" olarak göster
+
+bedtools intersect -a sha.oar.bed -b transvoar_samp.bed -wb | awk '{print $4,$10}' |awk '{gsub(/A|T|G|C/,"N",$2)}1' | awk '{gsub(/N,N/,"N",$2)}1'| sort | uniq -c |awk '{ print $1,'\t',$2,'\t',$3 }' > uq_oar.bed
+
+
+- sonraki adımlar R üzerinden
+
+6) her okuma için alternatif,referans ve total allel sayısı gösteren bir tablo oluştur
+
+peread=function(data){
+   y=read.table(data, sep = " ")
+   x=y[,-c(2,4)]
+   x$id=1:nrow(x)
+   wodups=x[!(duplicated(x$V3) | duplicated(x$V3,fromLast=T)),]
+   dups=x[(duplicated(x$V3) | duplicated(x$V3,fromLast=T)),]
+   ref=wodups[wodups$V5==".",]
+   alt=wodups[wodups$V5=="N",]
+
+ref2=data.frame(readid=ref$V3,ref=ref$V1,alt=(rep(0,nrow(ref))),id=ref$id)
+   alt2=data.frame(readid=alt$V3,ref=(rep(0,nrow(alt))),alt=alt$V1,id=alt$id)
+   wodups2=rbind(ref2,alt2)
+   dref=dups[dups$V5==".",]
+   dalt=dups[dups$V5=="N",]
+   dups2=data.frame(readid=dref$V3,ref=dref$V1,alt=dalt$V1,id=dref$id)
+   allreads=rbind(wodups2,dups2)
+   allreads2=allreads[order(allreads$id),]
+   final=data.frame(readid=allreads2$readid,ref=allreads2$ref,alt=allreads2$alt,total=allreads2$ref+allreads2$alt)
+
+   return(final)
+
+}
+
+per_oar=peread(uq_oar.bed)
+
+7) her okuma için alternatif alel frekansını bulan bir fonksiyon tanımla, farklı okumalarda farklı alele sahip okumaları elesin
+
+
+foreachaltfreqs_2=function(chidata,oardata){
+  
+  secshar=merge(chidata,oardata,by="readid")
+    easier=secshar[!((secshar$alt.y>secshar$ref.x & secshar$alt.x>secshar$ref.y) | (secshar$alt.y<secshar$ref.x & secshar$alt.x<secshar$ref.y)) ,]
+  
+  oar_altfreq=easier$alt.y/easier$total.y
+  chi_altfreq=easier$alt.x/easier$total.x
+    altfreqs=data.frame(chi_altfreq,oar_altfreq)
+  
+  return(altfreqs)
+  
+}
+
+
+8) frekans bulan fonksiyonu kullanarak,alternatif alel frekansı 1 ya da 0 olan okumaları seç (kolaylık için), frekanslara göre okumayı keçi ya da koyun okuması diye adlandır, koyun okuması/toplam okuma  oranına binomial test uygula  
+
+
+binom_readassign_2= function(transvchidata,transvoardata){
+  
+  each=foreachaltfreqs_2(transvchidata,transvoardata)
+
+  only_01=each[each$chi_altfreq==0 | each$chi_altfreq==1,]
+  totreads=dim(only_01)[1]
+  chireads=dim(only_01[only_01$chi_altfreq==0,])[1]
+  oarreads=dim(only_01[only_01$oar_altfreq==0,])[1]
+  
+  bin=binom.test(oarreads,totreads,p = 0.5,alternative = "two.sided")
+  res=data.frame(total_reads=totreads,oar_reads=oarreads,chi_reads=chireads,pvalue=bin$p.value)
+  
+
+  return(res)
+  
+}
+
+
+binom_readassign_2(per_chi,per_oar)
+
