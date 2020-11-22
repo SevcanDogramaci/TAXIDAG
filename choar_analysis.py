@@ -1,11 +1,12 @@
 import pysam
 import pathlib
 import pandas as pd 
+import pybedtools
 
-def write_variant_calls_to_file():
-    f = open(f"{current_dir}/data_out/1st_sample/snpCalls.txt", "w")
-    for call in snpCalls:
-        f.write(call)
+def write_variant_calls_to_file(data, path):
+    f = open(path, "w")
+    for item in data:
+        f.write(str(item))
     f.close()
 
 def filter_indels(variant_calls):
@@ -86,6 +87,17 @@ def filter_post_mortem_transitions(variant_calls):
         print()
     return variant_calls.drop(post_mortem_trans_row_ids, inplace=False)
 
+def create_bed_file(data):
+
+    new_data = [data["CHROM"], data["POS"].apply(lambda item: (item-1)), 
+                data["POS"], data["ALT"]]
+    new_data_headers = ["CHROM", "POS-1", "POS", "ALT"]
+    dataframe = pd.concat(new_data, axis=1, keys=new_data_headers)
+    print(dataframe.head(20))
+
+    dataframe.to_csv(f"{current_dir}/data_out/1st_sample/transv_oar_samp.bed", 
+                        header=False, index=False, sep="\t", mode="w")
+
 # --- MAIN PROGRAM STARTS ---
 
 # file paths
@@ -110,7 +122,7 @@ variant_calls = pysam.mpileup("-f", oar_ref_file, "-B", "-l", transv_poly_oar_fi
 print("Snp calling finished ...")
 
 # Open comment if you want to see variant calls in a txt file
-# write_variant_calls_to_file()
+# write_variant_calls_to_file(snpCalls, f"{current_dir}/data_out/1st_sample/snpCalls.txt")
 
 variant_calls = filter_variant_calls(variant_calls)
 
@@ -119,3 +131,13 @@ variant_calls = filter_variant_calls(variant_calls)
 print("\n\n>>> FILTER POSTMORTEM TRANSITIONS <<<")
 variant_calls = filter_post_mortem_transitions(variant_calls)
 print(variant_calls.head(20))
+
+# awk '{print $1,$2-1,$2,$4}'
+print("\n\n>>> CREATE BED FILE <<<")
+create_bed_file(variant_calls)
+
+# bedtools bamtobed -i bamfile > samp_oarbtb.bed 
+sample_oar_in_bam = pybedtools.example_bedtool(sorted_aligned_sample_to_oar_file)
+sample_oar_in_bed = sample_oar_in_bam.bam_to_bed()
+write_variant_calls_to_file(sample_oar_in_bed, 
+                            f"{current_dir}/data_out/1st_sample/samp_oar_btb.bed")
