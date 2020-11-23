@@ -1,17 +1,8 @@
 import pysam
-import pathlib
 import pybedtools
 from util import *
-
-# file paths
-current_dir = pathlib.Path(__file__).parent.absolute()
-
-aligned_sample_to_oar_file = f"{current_dir}/data/tmp/1st_sample/o_dp_tps062_MT.bam"
-aligned_sample_to_chi_file = f"{current_dir}/data/tmp/1st_sample/c_dp_tps062_MT.bam"
-sorted_aligned_sample_to_oar_file = f"{current_dir}/data_out/1st_sample/sorted_o_dp_tps062_MT.bam"
-sorted_aligned_sample_to_chi_file = f"{current_dir}/data_out/1st_sample/sorted_c_dp_tps062_MT.bam"
-oar_ref_file = f"{current_dir}/data/Ovis_aries.Oar_v3.1.dna_rm.chromosome.MT.fa"
-transv_poly_oar_file = f"{current_dir}/data/tmp/trvposoar.bed"
+from re import sub
+from file_paths import *
 
 # samtools faidx sequence1.fasta
 pysam.faidx(oar_ref_file)
@@ -40,14 +31,12 @@ print(variant_calls.head(20))
 # awk '{print $1,$2-1,$2,$4}'
 print("\n\n>>> CREATE BED FILE <<<")
 variants_info = get_variants_info(variant_calls)
-variants_info.to_csv(f"{current_dir}/data_out/1st_sample/transv_oar_samp.bed", 
-                    header=False, index=False, sep="\t", mode="w")
+variants_info.to_csv(transv_sample_oar_file, header=False, index=False, sep="\t", mode="w")
 
 # bedtools bamtobed -i bamfile > samp_oarbtb.bed 
 sample_oar_in_bam = pybedtools.example_bedtool(sorted_aligned_sample_to_oar_file)
 sample_oar_in_bed = sample_oar_in_bam.bam_to_bed()
-write_to_file(sample_oar_in_bed, 
-                            f"{current_dir}/data_out/1st_sample/samp_oar_btb.bed")   
+write_to_file(sample_oar_in_bed, sample_oar_bamtobed_file)   
 
 # ----- For Goat ------
 # sort and index the sample's aligned sequence to the goat's mtDNA reference
@@ -57,11 +46,26 @@ pysam.index(sorted_aligned_sample_to_chi_file)
 # bedtools bamtobed -i bamfile > samp_oarbtb.bed 
 sample_chi_in_bam = pybedtools.example_bedtool(sorted_aligned_sample_to_chi_file)
 sample_chi_in_bed = sample_chi_in_bam.bam_to_bed()
-write_to_file(sample_chi_in_bed, 
-                            f"{current_dir}/data_out/1st_sample/samp_chi_btb.bed")
+write_to_file(sample_chi_in_bed, sample_chi_bamtobed_file)
 # --------------------
 
 # sharead.R
-oar_file = f"{current_dir}/data_out/1st_sample/samp_oar_btb.bed"
-chi_file = f"{current_dir}/data_out/1st_sample/samp_chi_btb.bed"
-find_shared_reads(chi_file, oar_file)
+find_shared_reads(sample_chi_bamtobed_file, sample_oar_bamtobed_file)
+
+# bedtools intersect -a sha.oar.bed -b transvoar_samp.bed -wb 
+shared_oar = pybedtools.example_bedtool(shared_oar_file)
+transv_poly_oar = pybedtools.example_bedtool(transv_sample_oar_file)
+intersect_oar = shared_oar.intersect(transv_poly_oar, wb=True)
+intersect_oar = intersect_oar.to_dataframe()
+
+intersect_oar = pd.concat([intersect_oar["name"], intersect_oar["blockCount"]], axis=1)
+
+# |awk '{gsub(/A|T|G|C/,"N",$2)}1' | awk '{gsub(/N,N/,"N",$2)}1'
+intersect_oar["blockCount"] = intersect_oar["blockCount"].apply(
+                                    lambda item: sub("A|T|G|C|(N,N)", "N", item))
+
+# sort | uniq -c |awk '{ print $1,'\t',$2,'\t',$3 }'
+intersect_oar = intersect_oar.value_counts().to_frame().sort_values(by=["name"])
+print("\n\n >>> INTERSECTIONS <<<")
+print(intersect_oar.head(10))
+intersect_oar.to_csv(uniq_intersections_sample_oar_file, header=False, sep="\t", mode="w")
