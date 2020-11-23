@@ -1,110 +1,15 @@
 import pysam
 import pathlib
-import pandas as pd 
 import pybedtools
-
-def write_variant_calls_to_file(data, path):
-    f = open(path, "w")
-    for item in data:
-        f.write(str(item))
-    f.close()
-
-def filter_indels(variant_calls):
-    import re
-
-    variant_call_ids_to_filter = []
-    alt_base_column = []
-    for i, read_result in variant_calls['READ_RESULTS'].iteritems():
-
-        # search indels
-        ins_search = "\+[0-9]+[ACGTNacgtn]+"
-        del_search = "-[0-9]+[ACGTNacgtn]+"
-        ins = re.search(ins_search, read_result)
-        dels = re.search(del_search, read_result)
-
-        if ins == None and dels == None:
-            bases = "[ACGTNacgtn]"
-
-            # get alt base by searching
-            alt = re.search(bases, read_result)
-            if alt != None:
-                # get first alt base ?
-                alt = alt.group(0)
-            else:
-                alt = '.'
-            alt_base_column.append(alt)
-            print(i, alt, variant_calls["POS"][i])
-        else:
-            row_id_to_delete = variant_calls.index[i]
-            variant_call_ids_to_filter.append(row_id_to_delete)
-    
-    print("\nLength of variant calls before: ", len(variant_calls), \
-     " Length of variant calls to delete: ", len(variant_call_ids_to_filter))
-    variant_calls = variant_calls.drop(variant_call_ids_to_filter,inplace=False)
-    print("Length of variant calls after: ", len(variant_calls), "\n")
-    variant_calls.insert(len(variant_calls.columns), 'ALT', alt_base_column)
-    return variant_calls
-    
-
-def filter_columns(variant_calls, columns_to_filter):
-    return variant_calls.drop(columns_to_filter, axis=1, inplace=False)
-
-def filter_variant_calls(variant_calls):
-    from io import StringIO
-
-    # convert variant calls to dataframe for easier data manipulation
-    variant_calls = StringIO(variant_calls)
-    variant_call_columns = ['CHROM', 'POS', 'REF', 'READ_COUNT', 'READ_RESULTS', 'READ_QUALITY']
-    variant_calls_dataframe = pd.read_table(variant_calls, names=variant_call_columns)
-
-    print("\n\n>>> FILTER INSERTION & DELETIONS <<<")
-    variant_calls_dataframe = filter_indels(variant_calls_dataframe)
-    print(variant_calls_dataframe.head(20))
-    
-    print("\n\n>>> FILTER COLUMNS <<<")
-    columns_to_delete = ['READ_COUNT', 'READ_QUALITY', 'READ_RESULTS']
-    variant_calls_dataframe = filter_columns(variant_calls_dataframe, columns_to_delete)
-    print(variant_calls_dataframe.head(20))
-
-    return variant_calls_dataframe
-
-def filter_post_mortem_transitions(variant_calls):
-    
-    postmortem_transitions = [['T', 'C'], ['A', 'G']]
-    post_mortem_trans_row_ids = []
-
-    for i, variant_call in variant_calls.iterrows():
-        ref = variant_call['REF'].upper()
-        alt = variant_call['ALT'].upper()
-
-        print("Ref:", ref, " Alt:", alt)
-    
-        for transition in postmortem_transitions:
-            if (ref == transition[0] and alt == transition[1]) or \
-                (alt == transition[0] and ref == transition[1]):
-                    post_mortem_trans_row_ids.append(i)
-                    print("Postmortem transition found - ", "Pos:", variant_call["POS"], "i:", i)
-        print()
-    return variant_calls.drop(post_mortem_trans_row_ids, inplace=False)
-
-def create_bed_file(data):
-
-    new_data = [data["CHROM"], data["POS"].apply(lambda item: (item-1)), 
-                data["POS"], data["ALT"]]
-    new_data_headers = ["CHROM", "POS-1", "POS", "ALT"]
-    dataframe = pd.concat(new_data, axis=1, keys=new_data_headers)
-    print(dataframe.head(20))
-
-    dataframe.to_csv(f"{current_dir}/data_out/1st_sample/transv_oar_samp.bed", 
-                        header=False, index=False, sep="\t", mode="w")
-
-# --- MAIN PROGRAM STARTS ---
+from util import *
 
 # file paths
 current_dir = pathlib.Path(__file__).parent.absolute()
 
 aligned_sample_to_oar_file = f"{current_dir}/data/tmp/1st_sample/o_dp_tps062_MT.bam"
+aligned_sample_to_chi_file = f"{current_dir}/data/tmp/1st_sample/c_dp_tps062_MT.bam"
 sorted_aligned_sample_to_oar_file = f"{current_dir}/data_out/1st_sample/sorted_o_dp_tps062_MT.bam"
+sorted_aligned_sample_to_chi_file = f"{current_dir}/data_out/1st_sample/sorted_c_dp_tps062_MT.bam"
 oar_ref_file = f"{current_dir}/data/Ovis_aries.Oar_v3.1.dna_rm.chromosome.MT.fa"
 transv_poly_oar_file = f"{current_dir}/data/tmp/trvposoar.bed"
 
@@ -122,7 +27,7 @@ variant_calls = pysam.mpileup("-f", oar_ref_file, "-B", "-l", transv_poly_oar_fi
 print("Snp calling finished ...")
 
 # Open comment if you want to see variant calls in a txt file
-# write_variant_calls_to_file(snpCalls, f"{current_dir}/data_out/1st_sample/snpCalls.txt")
+# write_to_file(variant_calls, f"{current_dir}/data_out/1st_sample/snpCalls.txt")
 
 variant_calls = filter_variant_calls(variant_calls)
 
@@ -134,10 +39,29 @@ print(variant_calls.head(20))
 
 # awk '{print $1,$2-1,$2,$4}'
 print("\n\n>>> CREATE BED FILE <<<")
-create_bed_file(variant_calls)
+variants_info = get_variants_info(variant_calls)
+variants_info.to_csv(f"{current_dir}/data_out/1st_sample/transv_oar_samp.bed", 
+                    header=False, index=False, sep="\t", mode="w")
 
 # bedtools bamtobed -i bamfile > samp_oarbtb.bed 
 sample_oar_in_bam = pybedtools.example_bedtool(sorted_aligned_sample_to_oar_file)
 sample_oar_in_bed = sample_oar_in_bam.bam_to_bed()
-write_variant_calls_to_file(sample_oar_in_bed, 
-                            f"{current_dir}/data_out/1st_sample/samp_oar_btb.bed")
+write_to_file(sample_oar_in_bed, 
+                            f"{current_dir}/data_out/1st_sample/samp_oar_btb.bed")   
+
+# ----- For Goat ------
+# sort and index the sample's aligned sequence to the goat's mtDNA reference
+pysam.sort("-o", sorted_aligned_sample_to_chi_file, aligned_sample_to_chi_file)
+pysam.index(sorted_aligned_sample_to_chi_file)
+
+# bedtools bamtobed -i bamfile > samp_oarbtb.bed 
+sample_chi_in_bam = pybedtools.example_bedtool(sorted_aligned_sample_to_chi_file)
+sample_chi_in_bed = sample_chi_in_bam.bam_to_bed()
+write_to_file(sample_chi_in_bed, 
+                            f"{current_dir}/data_out/1st_sample/samp_chi_btb.bed")
+# --------------------
+
+# sharead.R
+oar_file = f"{current_dir}/data_out/1st_sample/samp_oar_btb.bed"
+chi_file = f"{current_dir}/data_out/1st_sample/samp_chi_btb.bed"
+find_shared_reads(chi_file, oar_file)
