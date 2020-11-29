@@ -65,7 +65,43 @@ intersect_oar["blockCount"] = intersect_oar["blockCount"].apply(
                                     lambda item: sub("A|T|G|C|(N,N)", "N", item))
 
 # sort | uniq -c |awk '{ print $1,'\t',$2,'\t',$3 }'
-intersect_oar = intersect_oar.value_counts().to_frame().sort_values(by=["name"])
+intersect_oar = intersect_oar.value_counts().reset_index(name='counts')
+intersect_oar = intersect_oar.sort_values(by=["name"])
+
 print("\n\n >>> INTERSECTIONS <<<")
 print(intersect_oar.head(10))
 intersect_oar.to_csv(uniq_intersections_sample_oar_file, header=False, sep="\t", mode="w")
+
+# create table of alternative, reference and total allele numbers
+intersect_oar["id"] = range(1, len(intersect_oar)+1)
+
+intersect_oar_with_ref_allele = intersect_oar[intersect_oar["blockCount"] == '.']
+intersect_oar_with_alt_allele = intersect_oar[intersect_oar["blockCount"] == 'N']
+
+intersect_oar_with_ref_allele.insert(
+    len(intersect_oar_with_ref_allele.columns),
+    "Ref", intersect_oar_with_ref_allele["counts"]
+)
+intersect_oar_with_ref_allele.insert(
+    len(intersect_oar_with_ref_allele.columns),
+    "Alt", [0]*len(intersect_oar_with_ref_allele)
+)
+
+intersect_oar_with_alt_allele.insert(
+    len(intersect_oar_with_alt_allele.columns),
+    "Alt", intersect_oar_with_alt_allele["counts"]
+)
+intersect_oar_with_alt_allele.insert(
+    len(intersect_oar_with_alt_allele.columns),
+    "Ref", [0]*len(intersect_oar_with_alt_allele)
+)
+
+all_intersects = pd.concat([intersect_oar_with_ref_allele, intersect_oar_with_alt_allele])
+all_intersects.insert(
+    len(all_intersects.columns),
+    "Total", all_intersects["Ref"] + all_intersects["Alt"]
+)
+all_intersects = filter_columns(all_intersects, ["counts", "blockCount"])
+all_intersects = all_intersects.sort_values(by=["id"])
+
+print(all_intersects)
