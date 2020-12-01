@@ -3,7 +3,7 @@ import pathlib
 import pandas as pd 
 import pybedtools
 
-current_dir = pathlib.Path(__file__).parent.absolute()
+from file_paths import current_dir, current_sample_dir
 
 def write_to_file(data, path):
     f = open(path, "w")
@@ -140,9 +140,9 @@ def find_shared_reads(chi_sample, oar_sample):
     }
     shared_oar = pd.DataFrame(shared_oar_data)
 
-    shared_chi.to_csv(f"{current_dir}/data_out/1st_sample/shared_chi.bed", 
+    shared_chi.to_csv(f"{current_dir}/data_out/{current_sample_dir}/shared_chi.bed", 
                         header=False, index=False, sep="\t", mode="w")
-    shared_oar.to_csv(f"{current_dir}/data_out/1st_sample/shared_oar.bed", 
+    shared_oar.to_csv(f"{current_dir}/data_out/{current_sample_dir}/shared_oar.bed", 
                         header=False, index=False, sep="\t", mode="w")
 
 
