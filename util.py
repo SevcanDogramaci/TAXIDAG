@@ -145,3 +145,23 @@ def find_shared_reads(chi_sample, oar_sample):
     shared_oar.to_csv(f"{current_dir}/data_out/1st_sample/shared_oar.bed", 
                         header=False, index=False, sep="\t", mode="w")
 
+
+def find_alt_freqs(all_intersects_chi, all_intersects_oar):
+    all_intersects = all_intersects_chi.merge(all_intersects_oar, on="name")
+    
+    print("\n\n>>> ALL INTERSECTIONS <<<")
+    print(all_intersects.head(5))
+
+    all_intersects = all_intersects.query('not (Alt_y>Ref_x  &  Alt_x>Ref_y) | (Alt_y<Ref_x & Alt_x<Ref_y)')
+
+    all_intersects.insert(    
+        len(all_intersects.columns),
+        "Oar_Alt_Freq", (all_intersects["Alt_y"] / all_intersects["Total_y"])
+    )
+    all_intersects.insert(    
+        len(all_intersects.columns),
+        "Chi_Alt_Freq", (all_intersects["Alt_x"] / all_intersects["Total_x"])
+    )
+
+    all_alt_freqs = pd.concat([all_intersects["Chi_Alt_Freq"], all_intersects["Oar_Alt_Freq"]], axis=1)
+    return all_alt_freqs
