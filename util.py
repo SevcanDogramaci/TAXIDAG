@@ -165,3 +165,72 @@ def find_alt_freqs(all_intersects_chi, all_intersects_oar):
 
     all_alt_freqs = pd.concat([all_intersects["Chi_Alt_Freq"], all_intersects["Oar_Alt_Freq"]], axis=1)
     return all_alt_freqs
+
+
+def sort_and_index_aligned_file(sorted_aligned_sample_file, aligned_sample_file):
+    pysam.sort("-o", sorted_aligned_sample_file, aligned_sample_file)
+    pysam.index(sorted_aligned_sample_file)
+
+
+def call_variants(ref_file, transv_poly_file, sorted_aligned_sample_file):
+    # bcftools mpileup -B -f fastafile -R bedfile bamfile | 
+    # bcftools call -mV indels -A --ploidy 1 -o tr_samp_oar.vcf
+    print("Snp calling is starting ...")
+    variant_calls = pysam.mpileup("-f", ref_file, "-B", "-l", transv_poly_file, sorted_aligned_sample_file)
+    print("Snp calling finished ...")
+    return variant_calls
+
+
+def convert_bam_to_bed(bam_file, bam_to_bed_file):
+    # bedtools bamtobed -i bamfile > samp_oarbtb.bed 
+    sample_in_bam = pybedtools.example_bedtool(bam_file)
+    sample_in_bed = sample_in_bam.bam_to_bed()
+    write_to_file(sample_in_bed, bam_to_bed_file) 
+
+
+def find_intersections(shared_file, transv_sample_file, uniq_intersections_sample_file):
+    from re import sub
+    
+    # bedtools intersect -a sha.oar.bed -b transvoar_samp.bed -wb 
+    shared = pybedtools.example_bedtool(shared_file)
+    transv_poly = pybedtools.example_bedtool(transv_sample_file)
+    intersects = shared.intersect(transv_poly, wb=True)
+    intersects = intersects.to_dataframe()
+
+    intersects = pd.concat([intersects["name"], intersects["blockCount"]], axis=1)
+
+    # |awk '{gsub(/A|T|G|C/,"N",$2)}1' | awk '{gsub(/N,N/,"N",$2)}1'
+    intersects["blockCount"] = intersects["blockCount"].apply(
+                                        lambda item: sub("A|a|T|t|G|g|C|c|(N,N)", "N", item))
+
+    # sort | uniq -c |awk '{ print $1,'\t',$2,'\t',$3 }'
+    intersects = intersects.value_counts().reset_index(name='counts')
+    intersects = intersects.sort_values(by=["name"])
+
+    print("\n\n >>> INTERSECTIONS <<<")
+    print(intersects.head(10))
+    intersects.to_csv(uniq_intersections_sample_file, header=False, sep="\t", mode="w")
+        
+    return intersects
+
+
+def insert_ref_and_alt_allele_numbers(intersects):
+    intersects["id"] = range(1, len(intersects)+1)
+
+    intersects_with_ref_allele = intersects[intersects["blockCount"] == '.']
+    intersects_with_alt_allele = intersects[intersects["blockCount"] == 'N']
+
+    intersects_with_ref_allele.insert( len(intersects_with_ref_allele.columns), "Ref", intersects_with_ref_allele["counts"])
+    intersects_with_ref_allele.insert( len(intersects_with_ref_allele.columns), "Alt", [0]*len(intersects_with_ref_allele))
+
+    intersects_with_alt_allele.insert( len(intersects_with_alt_allele.columns),"Alt", intersects_with_alt_allele["counts"])
+    intersects_with_alt_allele.insert(len(intersects_with_alt_allele.columns), "Ref", [0]*len(intersects_with_alt_allele))
+
+    all_intersects = pd.concat([intersects_with_ref_allele, intersects_with_alt_allele])
+    all_intersects.insert(len(all_intersects.columns), "Total", all_intersects["Ref"] + all_intersects["Alt"])
+    all_intersects = filter_columns(all_intersects, ["counts", "blockCount"])
+    all_intersects = all_intersects.sort_values(by=["id"])
+    
+    print("\n\n>>> ALL INTERSECTIONS <<<")
+    print(all_intersects.head(5))
+    return all_intersects

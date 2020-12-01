@@ -1,107 +1,100 @@
 import pysam
 import pybedtools
+
 from util import *
-from re import sub
 from file_paths import *
 
 # samtools faidx sequence1.fasta
 pysam.faidx(oar_ref_file)
+pysam.faidx(chi_ref_file)
 
-# sort and index the sample's aligned sequence to the sheep's mtDNA reference
-pysam.sort("-o", sorted_aligned_sample_to_oar_file, aligned_sample_to_oar_file)
-pysam.index(sorted_aligned_sample_to_oar_file)
 
-# bcftools mpileup -B -f fastafile -R bedfile bamfile | 
-# bcftools call -mV indels -A --ploidy 1 -o tr_samp_oar.vcf
-print("Snp calling is starting ...")
-variant_calls = pysam.mpileup("-f", oar_ref_file, "-B", "-l", transv_poly_oar_file, sorted_aligned_sample_to_oar_file)
-print("Snp calling finished ...")
+# === STEP 1 ===
+# sort and index the sample's aligned sequence to the sheep's or goat's mtDNA reference
+sort_and_index_aligned_file(sorted_aligned_sample_to_oar_file, aligned_sample_to_oar_file)
+sort_and_index_aligned_file(sorted_aligned_sample_to_chi_file, aligned_sample_to_chi_file)
+# ==============
 
-# Open comment if you want to see variant calls in a txt file
-# write_to_file(variant_calls, f"{current_dir}/data_out/1st_sample/snpCalls.txt")
 
-variant_calls = filter_variant_calls(variant_calls)
+# === STEP 2 ===
+variant_calls_oar = call_variants(oar_ref_file, transv_poly_oar_file, sorted_aligned_sample_to_oar_file)
+variant_calls_chi = call_variants(chi_ref_file, transv_poly_chi_file, sorted_aligned_sample_to_chi_file)
+# === ====== ===
+
+
+# === STEP 3 ===
+variant_calls_oar = filter_variant_calls(variant_calls_oar)
+variant_calls_chi = filter_variant_calls(variant_calls_chi)
+
 
 # awk '!( $3 == "T" && $4 == "C" || $3 == "C" && $4 == "T" || 
 #         $3 == "A" && $4 == "G" || $3 == "G" && $4 == "A" )
-print("\n\n>>> FILTER POSTMORTEM TRANSITIONS <<<")
-variant_calls = filter_post_mortem_transitions(variant_calls)
-print(variant_calls.head(20))
+print("\n\n>>> FILTER POSTMORTEM TRANSITIONS FOR OAR<<<")
+variant_calls_oar = filter_post_mortem_transitions(variant_calls_oar)
+print(variant_calls_oar.head(20))
+
+print("\n\n>>> FILTER POSTMORTEM TRANSITIONS FOR CHI<<<")
+variant_calls_chi = filter_post_mortem_transitions(variant_calls_chi)
+print(variant_calls_chi.head(20))
+
 
 # awk '{print $1,$2-1,$2,$4}'
-print("\n\n>>> CREATE BED FILE <<<")
-variants_info = get_variants_info(variant_calls)
-variants_info.to_csv(transv_sample_oar_file, header=False, index=False, sep="\t", mode="w")
+print("\n\n>>> CREATE BED FILE FOR OAR<<<")
+variants_info_oar = get_variants_info(variant_calls_oar)
+variants_info_oar.to_csv(transv_sample_oar_file, header=False, index=False, sep="\t", mode="w")
 
-# bedtools bamtobed -i bamfile > samp_oarbtb.bed 
-sample_oar_in_bam = pybedtools.example_bedtool(sorted_aligned_sample_to_oar_file)
-sample_oar_in_bed = sample_oar_in_bam.bam_to_bed()
-write_to_file(sample_oar_in_bed, sample_oar_bamtobed_file)   
+print("\n\n>>> CREATE BED FILE FOR CHI<<<")
+variants_info_chi = get_variants_info(variant_calls_chi)
+variants_info_chi.to_csv(transv_sample_chi_file, header=False, index=False, sep="\t", mode="w")
+# === ====== ===
 
-# ----- For Goat ------
-# sort and index the sample's aligned sequence to the goat's mtDNA reference
-pysam.sort("-o", sorted_aligned_sample_to_chi_file, aligned_sample_to_chi_file)
-pysam.index(sorted_aligned_sample_to_chi_file)
 
-# bedtools bamtobed -i bamfile > samp_oarbtb.bed 
-sample_chi_in_bam = pybedtools.example_bedtool(sorted_aligned_sample_to_chi_file)
-sample_chi_in_bed = sample_chi_in_bam.bam_to_bed()
-write_to_file(sample_chi_in_bed, sample_chi_bamtobed_file)
-# --------------------
+# === STEP 4 ===
+convert_bam_to_bed(sorted_aligned_sample_to_oar_file, sample_oar_bamtobed_file)   
+convert_bam_to_bed(sorted_aligned_sample_to_chi_file, sample_chi_bamtobed_file)
+# === ====== ===
 
+
+# === STEP 5 ===
 # sharead.R
 find_shared_reads(sample_chi_bamtobed_file, sample_oar_bamtobed_file)
+# === ====== ===
 
-# bedtools intersect -a sha.oar.bed -b transvoar_samp.bed -wb 
-shared_oar = pybedtools.example_bedtool(shared_oar_file)
-transv_poly_oar = pybedtools.example_bedtool(transv_sample_oar_file)
-intersect_oar = shared_oar.intersect(transv_poly_oar, wb=True)
-intersect_oar = intersect_oar.to_dataframe()
 
-intersect_oar = pd.concat([intersect_oar["name"], intersect_oar["blockCount"]], axis=1)
+# === STEP 6 ===
+intersect_oar = find_intersections(shared_oar_file, transv_sample_oar_file, uniq_intersections_sample_oar_file)
+intersect_chi = find_intersections(shared_chi_file, transv_sample_chi_file, uniq_intersections_sample_chi_file)
+# === ====== ===
 
-# |awk '{gsub(/A|T|G|C/,"N",$2)}1' | awk '{gsub(/N,N/,"N",$2)}1'
-intersect_oar["blockCount"] = intersect_oar["blockCount"].apply(
-                                    lambda item: sub("A|T|G|C|(N,N)", "N", item))
 
-# sort | uniq -c |awk '{ print $1,'\t',$2,'\t',$3 }'
-intersect_oar = intersect_oar.value_counts().reset_index(name='counts')
-intersect_oar = intersect_oar.sort_values(by=["name"])
-
-print("\n\n >>> INTERSECTIONS <<<")
-print(intersect_oar.head(10))
-intersect_oar.to_csv(uniq_intersections_sample_oar_file, header=False, sep="\t", mode="w")
-
+# === STEP 7 ===
 # create table of alternative, reference and total allele numbers
-intersect_oar["id"] = range(1, len(intersect_oar)+1)
+all_intersects_oar = insert_ref_and_alt_allele_numbers(intersect_oar)
+all_intersects_chi = insert_ref_and_alt_allele_numbers(intersect_chi)
+# === ====== ===
 
-intersect_oar_with_ref_allele = intersect_oar[intersect_oar["blockCount"] == '.']
-intersect_oar_with_alt_allele = intersect_oar[intersect_oar["blockCount"] == 'N']
 
-intersect_oar_with_ref_allele.insert(
-    len(intersect_oar_with_ref_allele.columns),
-    "Ref", intersect_oar_with_ref_allele["counts"]
-)
-intersect_oar_with_ref_allele.insert(
-    len(intersect_oar_with_ref_allele.columns),
-    "Alt", [0]*len(intersect_oar_with_ref_allele)
-)
+# === STEP 8 === 
+all_alt_freqs = find_alt_freqs(all_intersects_chi, all_intersects_oar)
+chi_alt_freq_with_0_or_1 = all_alt_freqs.query('Chi_Alt_Freq == 0 | Chi_Alt_Freq == 1')
 
-intersect_oar_with_alt_allele.insert(
-    len(intersect_oar_with_alt_allele.columns),
-    "Alt", intersect_oar_with_alt_allele["counts"]
-)
-intersect_oar_with_alt_allele.insert(
-    len(intersect_oar_with_alt_allele.columns),
-    "Ref", [0]*len(intersect_oar_with_alt_allele)
-)
+total_read_numbers = len(chi_alt_freq_with_0_or_1)
+chi_read_numbers = len(chi_alt_freq_with_0_or_1.query('Chi_Alt_Freq == 0'))
+oar_read_numbers = len(chi_alt_freq_with_0_or_1.query('Oar_Alt_Freq == 0'))
 
-all_intersects = pd.concat([intersect_oar_with_ref_allele, intersect_oar_with_alt_allele])
-all_intersects.insert(
-    len(all_intersects.columns),
-    "Total", all_intersects["Ref"] + all_intersects["Alt"]
-)
-all_intersects = filter_columns(all_intersects, ["counts", "blockCount"])
-all_intersects = all_intersects.sort_values(by=["id"])
+print("Total read number: ", total_read_numbers)
+print("Chi read number:", chi_read_numbers)
+print("Oar read number:", oar_read_numbers)
 
-print(all_intersects)
+from scipy.stats import binom_test
+binom_test_result = binom_test(oar_read_numbers, total_read_numbers, p=0.5, alternative='two-sided')
+
+read_numbers_with_binom_result = pd.DataFrame({
+                                        "Total_reads": [total_read_numbers],
+                                        "Oar_reads": [oar_read_numbers],
+                                        "Chi_reads": [chi_read_numbers],
+                                        "p_value": [binom_test_result]
+                                    })
+print("\b\n>>> RESULTS <<<")
+print(read_numbers_with_binom_result)
+# === ====== ===
