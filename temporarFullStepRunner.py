@@ -40,8 +40,8 @@ print("Snp calling finished for chi...")
 
 
 # === STEP 3 ===
-variant_calls_oar = filter_variant_calls(variant_calls_oar)
-variant_calls_chi = filter_variant_calls(variant_calls_chi)
+variant_calls_oar = filter_variant_calls_from_pileup_format(variant_calls_oar)
+variant_calls_chi = filter_variant_calls_from_pileup_format(variant_calls_chi)
 
 # awk '!( $3 == "T" && $4 == "C" || $3 == "C" && $4 == "T" || 
 #         $3 == "A" && $4 == "G" || $3 == "G" && $4 == "A" )
@@ -77,7 +77,7 @@ write_to_file(sample_chi_in_bed, sample_chi_bamtobed_file)
 
 # === STEP 5 ===
 # sharead.R
-find_shared_reads(sample_chi_bamtobed_file, sample_oar_bamtobed_file)
+find_shared_reads(sample_chi_in_bed, sample_oar_in_bed)
 # === ====== ===
 
 

@@ -54,13 +54,13 @@ def filter_columns(variant_calls, columns_to_filter):
     return variant_calls.drop(columns_to_filter, axis=1, inplace=False)
 
 
-def filter_variant_calls(variant_calls):
+def filter_variant_calls_from_pileup_format(variant_calls):
     from io import StringIO
+    pileup_format_columns = ['CHROM', 'POS', 'REF', 'READ_COUNT', 'READ_RESULTS', 'READ_QUALITY']
 
     # convert variant calls to dataframe for easier data manipulation
     variant_calls = StringIO(variant_calls)
-    variant_call_columns = ['CHROM', 'POS', 'REF', 'READ_COUNT', 'READ_RESULTS', 'READ_QUALITY']
-    variant_calls_dataframe = pd.read_table(variant_calls, names=variant_call_columns)
+    variant_calls_dataframe = pd.read_table(variant_calls, names=pileup_format_columns)
 
     print("\n\n>>> FILTER INSERTION & DELETIONS <<<")
     variant_calls_dataframe = filter_indels(variant_calls_dataframe)
@@ -106,10 +106,23 @@ def get_variants_info(data):
     return dataframe
 
 
+def create_shared_data_for_species(shared_data, columns, species_symbol):
+    species_data = {}
+
+    for column in columns:
+        if column == "name":
+            shared_column_name = column
+        else:
+            shared_column_name = f'{column}_{species_symbol}'
+        species_data[column] = shared_data[shared_column_name]
+
+    return pd.DataFrame(species_data)
+
+
 def find_shared_reads(chi_sample, oar_sample):
-    headers = ["V1", "V2", "V3", "V4", "V5", "V6"]
-    chi_btb = pd.read_table(chi_sample, sep = "\t", names = headers)
-    oar_btb = pd.read_table(oar_sample,sep = "\t", names = headers)
+
+    chi_btb  = chi_sample.to_dataframe()
+    oar_btb  = oar_sample.to_dataframe()
 
     oar_btb["id"] = range(1, len(oar_btb)+1)
     print("\n\n>>> CHI <<<")
@@ -117,28 +130,11 @@ def find_shared_reads(chi_sample, oar_sample):
     print("\n\n>>> OAR <<<")
     print(oar_btb.head(20))
 
-    shared2=chi_btb.merge(oar_btb, on="V4")
+    shared2=chi_btb.merge(oar_btb, on="name")
     shared2.sort_values(by=["id"])
 
-    shared_chi_data = {
-        "V1": shared2["V1_x"],
-        "V2": shared2["V2_x"],
-        "V3": shared2["V3_x"],
-        "V4": shared2["V4"],
-        "V5": shared2["V5_x"],
-        "V6": shared2["V6_x"]
-    }
-    shared_chi = pd.DataFrame(shared_chi_data)
-
-    shared_oar_data = {
-        "V1": shared2["V1_y"],
-        "V2": shared2["V2_y"],
-        "V3": shared2["V3_y"],
-        "V4": shared2["V4"],
-        "V5": shared2["V5_y"],
-        "V6": shared2["V6_y"]
-    }
-    shared_oar = pd.DataFrame(shared_oar_data)
+    shared_chi = create_shared_data_for_species(shared2, chi_btb.columns, "x")
+    shared_oar = create_shared_data_for_species(shared2, chi_btb.columns, "y")
 
     shared_chi.to_csv(f"{current_dir}/data_out/{current_sample_dir}/shared_chi.bed", 
                         header=False, index=False, sep="\t", mode="w")
@@ -186,6 +182,8 @@ def convert_bam_to_bed(bam_file, bam_to_bed_file):
     sample_in_bam = pybedtools.example_bedtool(bam_file)
     sample_in_bed = sample_in_bam.bam_to_bed()
     write_to_file(sample_in_bed, bam_to_bed_file) 
+
+    return sample_in_bed
 
 
 def find_intersections(shared_file, transv_sample_file, uniq_intersections_sample_file):

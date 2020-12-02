@@ -23,8 +23,8 @@ variant_calls_chi = call_variants(chi_ref_file, transv_poly_chi_file, sorted_ali
 
 
 # === STEP 3 ===
-variant_calls_oar = filter_variant_calls(variant_calls_oar)
-variant_calls_chi = filter_variant_calls(variant_calls_chi)
+variant_calls_oar = filter_variant_calls_from_pileup_format(variant_calls_oar)
+variant_calls_chi = filter_variant_calls_from_pileup_format(variant_calls_chi)
 
 
 # awk '!( $3 == "T" && $4 == "C" || $3 == "C" && $4 == "T" || 
@@ -50,14 +50,14 @@ variants_info_chi.to_csv(transv_sample_chi_file, header=False, index=False, sep=
 
 
 # === STEP 4 ===
-convert_bam_to_bed(sorted_aligned_sample_to_oar_file, sample_oar_bamtobed_file)   
-convert_bam_to_bed(sorted_aligned_sample_to_chi_file, sample_chi_bamtobed_file)
+sample_oar_in_bed = convert_bam_to_bed(sorted_aligned_sample_to_oar_file, sample_oar_bamtobed_file)   
+sample_chi_in_bed = convert_bam_to_bed(sorted_aligned_sample_to_chi_file, sample_chi_bamtobed_file)
 # === ====== ===
 
 
 # === STEP 5 ===
 # sharead.R
-find_shared_reads(sample_chi_bamtobed_file, sample_oar_bamtobed_file)
+find_shared_reads(sample_chi_in_bed, sample_oar_in_bed)
 # === ====== ===
 
 
