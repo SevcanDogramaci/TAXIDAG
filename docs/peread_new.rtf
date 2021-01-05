@@ -1,0 +1,119 @@
+{\rtf1\ansi\deff3\adeflang1025
+{\fonttbl{\f0\froman\fprq2\fcharset0 Times New Roman;}{\f1\froman\fprq2\fcharset2 Symbol;}{\f2\fswiss\fprq2\fcharset0 Arial;}{\f3\froman\fprq2\fcharset0 Liberation Serif{\*\falt Times New Roman};}{\f4\fswiss\fprq2\fcharset0 Liberation Sans{\*\falt Arial};}{\f5\froman\fprq2\fcharset0 HelveticaNeue-Light;}{\f6\fnil\fprq2\fcharset0 Noto Sans CJK SC Regular;}{\f7\fnil\fprq2\fcharset0 Lohit Devanagari;}{\f8\fnil\fprq0\fcharset128 Lohit Devanagari;}}
+{\colortbl;\red0\green0\blue0;\red0\green0\blue255;\red0\green255\blue255;\red0\green255\blue0;\red255\green0\blue255;\red255\green0\blue0;\red255\green255\blue0;\red255\green255\blue255;\red0\green0\blue128;\red0\green128\blue128;\red0\green128\blue0;\red128\green0\blue128;\red128\green0\blue0;\red128\green128\blue0;\red128\green128\blue128;\red192\green192\blue192;}
+{\stylesheet{\s0\snext0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033 Normal;}
+{\s15\sbasedon0\snext16\sb240\sa120\keepn\dbch\af6\dbch\af7\afs28\loch\f4\fs28 Heading;}
+{\s16\sbasedon0\snext16\sl276\slmult1\sb0\sa140 Text Body;}
+{\s17\sbasedon16\snext17\sl276\slmult1\sb0\sa140\dbch\af8 List;}
+{\s18\sbasedon0\snext18\sb120\sa120\noline\i\dbch\af8\afs24\ai\fs24 Caption;}
+{\s19\sbasedon0\snext19\noline\dbch\af8 Index;}
+}{\*\generator LibreOffice/6.0.7.3$Linux_X86_64 LibreOffice_project/00m0$Build-3}{\info{\creatim\yr0\mo0\dy0\hr0\min0}{\revtim\yr2020\mo12\dy26\hr17\min21}{\printim\yr0\mo0\dy0\hr0\min0}}{\*\userprops}\deftab720
+\viewscale65
+{\*\pgdsctbl
+{\pgdsc0\pgdscuse451\pgwsxn11906\pghsxn16838\marglsxn1440\margrsxn1440\margtsxn1440\margbsxn1440\pgdscnxt0 Default Style;}}
+\formshade{\*\pgdscno0}\paperh16838\paperw11906\margl1440\margr1440\margt1440\margb1440\sectd\sbknone\sectunlocked1\pgndec\pgwsxn11906\pghsxn16838\marglsxn1440\margrsxn1440\margtsxn1440\margbsxn1440\ftnbj\ftnstart1\ftnrstcont\ftnnar\aenddoc\aftnrstcont\aftnstart1\aftnnrlc
+{\*\ftnsep\chftnsep}\pgndec\pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+peread2 = function(data) \{ }
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+y=read.table(data, sep = " ")}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+x=y[,-c(2,4)]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+x$id=1:nrow(x)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+wodups=x[!(duplicated(x$V3) | duplicated(x$V3,fromLast=T)),]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+dups=x[(duplicated(x$V3) | duplicated(x$V3,fromLast=T)),]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+ref=wodups[wodups$V5==".",]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+alt=wodups[wodups$V5=="N",]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+ref2=data.frame(readid=ref$V3,ref=ref$V1,alt=(rep(0,nrow(ref))),id=ref$id)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+alt2=data.frame(readid=alt$V3,ref=(rep(0,nrow(alt))),alt=alt$V1,id=alt$id)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+wodups2=rbind(ref2,alt2)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+dref=dups[dups$V5==".",]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+dalt=dups[dups$V5=="N",]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+un_dref=dref[(duplicated(dref$V3) | !duplicated(dref$V3,fromLast=T)),c("V3","id")]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+freq1=c()}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+for (i in un_dref$V3 ) \{}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\fs32\loch\f5\hich\af5
+  }{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+freq1[length(freq1)+1]=dim(dref[dref$V3==i,])[1]  }
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+\}}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+un_dalt=dalt[(duplicated(dalt$V3) | !duplicated(dalt$V3,fromLast=T)),c("V3","id")]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+freq2=c()}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+for (i in un_dalt$V3 ) \{}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\fs32\loch\f5\hich\af5
+  }
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\fs32\loch\f5\hich\af5
+  }{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+freq2[length(freq2)+1]=dim(dalt[dalt$V3==i,])[1]  }
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\fs32\loch\f5\hich\af5
+  }
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+\}}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+dref_fr=data.frame(readid=un_dref$V3,ref=freq1,alt=rep(0,length(freq1)),id=un_dref$id)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+dalt_fr=data.frame(readid=un_dalt$V3,ref=rep(0,length(freq2)),alt=freq2,id=un_dalt$id)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+cm_refalt = merge(dref_fr,dalt_fr,by.x="readid",by.y = "readid")}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+cm_nrefalt=data.frame(readid=cm_refalt$readid,ref=cm_refalt$ref.x, alt=(cm_refalt$alt.x + cm_refalt$alt.y), id=cm_refalt$id.x)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+merged=rbind(dref_fr,dalt_fr)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+non_cm=merged[!(duplicated(merged$readid) | duplicated(merged$readid,fromLast=T)),]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+dups2=rbind(cm_nrefalt,non_cm)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+allreads=rbind(wodups2,dups2)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+allreads2=allreads[order(allreads$id),]}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+final=data.frame(readid=allreads2$readid,ref=allreads2$ref,alt=allreads2$alt,total=allreads2$ref+allreads2$alt)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\b\ab\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+return(final)}
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+
+\par \pard\plain \s0\nowidctlpar\hyphpar0\cf0\kerning1\dbch\af6\langfe2052\dbch\af7\afs24\alang1081\loch\f3\hich\af3\fs24\lang1033\sl288\slmult1{\cf1\rtlch \ltrch\loch\fs32\loch\f5\hich\af5
+\}}
+\par }
