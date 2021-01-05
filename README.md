@@ -14,7 +14,7 @@ For further details, please look at the poster in docs folder.
 
 → **Working environment**
 
-- Python 3.6
+- Python 3+ (tested with 3.6)
 - Bedtools ([https://bedtools.readthedocs.io/en/latest/](https://bedtools.readthedocs.io/en/latest/))
 
     Ubuntu installation : `sudo apt-get install bedtools`
