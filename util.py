@@ -3,7 +3,7 @@ import pathlib
 import pandas as pd 
 import pybedtools
 
-import file_paths
+import settings
 
 def write_to_file(data, path):
     f = open(path, "w")
@@ -37,19 +37,19 @@ def filter_indels(variant_calls):
             else:
                 alt = '.'
             alt_base_column.append(alt)
-            if file_paths.DEBUG:
+            if settings.DEBUG:
                 print(i, alt, variant_calls["POS"][i])
         else:
             row_id_to_delete = variant_calls.index[i]
             variant_call_ids_to_filter.append(row_id_to_delete)
     
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("\nLength of variant calls before: ", len(variant_calls), \
         " Length of variant calls to delete: ", len(variant_call_ids_to_filter))
 
     variant_calls = variant_calls.drop(variant_call_ids_to_filter,inplace=False)
 
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("Length of variant calls after: ", len(variant_calls), "\n")
 
     variant_calls.insert(len(variant_calls.columns), 'ALT', alt_base_column)
@@ -68,24 +68,24 @@ def filter_variant_calls_from_pileup_format(variant_calls):
     variant_calls = StringIO(variant_calls)
     variant_calls_dataframe = pd.read_table(variant_calls, names=pileup_format_columns)
 
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("\n\n>>> FILTER INSERTION & DELETIONS <<<")
     variant_calls_dataframe = filter_indels(variant_calls_dataframe)
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print(variant_calls_dataframe.head(20))
     
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("\n\n>>> FILTER COLUMNS <<<")
     columns_to_delete = ['READ_COUNT', 'READ_QUALITY', 'READ_RESULTS']
     variant_calls_dataframe = filter_columns(variant_calls_dataframe, columns_to_delete)
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print(variant_calls_dataframe.head(20))
 
     return variant_calls_dataframe
 
 
 def filter_post_mortem_transitions(variant_calls):
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("\n\n>>> FILTER POSTMORTEM TRANSITIONS <<<")
 
     postmortem_transitions = [['T', 'C'], ['A', 'G']]
@@ -95,24 +95,24 @@ def filter_post_mortem_transitions(variant_calls):
         ref = variant_call['REF'].upper()
         alt = variant_call['ALT'].upper()
 
-        if file_paths.DEBUG:
+        if settings.DEBUG:
             print("Ref:", ref, " Alt:", alt)
     
         for transition in postmortem_transitions:
             if (ref == transition[0] and alt == transition[1]) or \
                 (alt == transition[0] and ref == transition[1]):
                     post_mortem_trans_row_ids.append(i)
-                    if file_paths.DEBUG:
+                    if settings.DEBUG:
                         print("Postmortem transition found - ", "Pos:", variant_call["POS"], "i:", i)
 
     variant_calls = variant_calls.drop(post_mortem_trans_row_ids, inplace=False)
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("\n", variant_calls.head(20))
     return variant_calls
 
 
 def get_variants_info(data, transv_sample_file):
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("\n\n>>> CREATE BED FILE <<<")
 
     new_data = [data["CHROM"], data["POS"].apply(lambda item: (item-1)), 
@@ -121,7 +121,7 @@ def get_variants_info(data, transv_sample_file):
     dataframe = pd.concat(new_data, axis=1, keys=new_data_headers)
 
 
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print(dataframe.head(20))
         dataframe.to_csv(transv_sample_file, header=False, index=False, sep="\t", mode="w")
 
@@ -147,7 +147,7 @@ def find_shared_reads(chi_sample, oar_sample):
     oar_btb  = oar_sample.to_dataframe()
 
     oar_btb["id"] = range(1, len(oar_btb)+1)
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("\n\n>>> CHI <<<")
         print(chi_btb.head(20))
         print("\n\n>>> OAR <<<")
@@ -159,16 +159,16 @@ def find_shared_reads(chi_sample, oar_sample):
     shared_chi = create_shared_data_for_species(shared2, chi_btb.columns, "x")
     shared_oar = create_shared_data_for_species(shared2, chi_btb.columns, "y")
 
-    if file_paths.DEBUG:
-        shared_chi.to_csv(file_paths.shared_chi_file, header=False, index=False, sep="\t", mode="w")
-        shared_oar.to_csv(file_paths.shared_oar_file, header=False, index=False, sep="\t", mode="w")
+    if settings.DEBUG:
+        shared_chi.to_csv(settings.shared_chi_file, header=False, index=False, sep="\t", mode="w")
+        shared_oar.to_csv(settings.shared_oar_file, header=False, index=False, sep="\t", mode="w")
     return (shared_chi, shared_oar)
 
 
 def find_alt_freqs(all_intersects_chi, all_intersects_oar):
     all_intersects = all_intersects_chi.merge(all_intersects_oar, on="name")
     
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("\n\n>>> ALL INTERSECTIONS <<<")
         print(all_intersects.head(5))
 
@@ -184,6 +184,8 @@ def find_alt_freqs(all_intersects_chi, all_intersects_oar):
     )
 
     all_alt_freqs = pd.concat([all_intersects["Chi_Alt_Freq"], all_intersects["Oar_Alt_Freq"]], axis=1)
+    print("\n\nALL ALT FREQS")
+    print(all_alt_freqs.head(10))
     return all_alt_freqs
 
 
@@ -195,10 +197,10 @@ def sort_and_index_aligned_file(sorted_aligned_sample_file, aligned_sample_file)
 def call_variants(ref_file, transv_poly_file, sorted_aligned_sample_file):
     # bcftools mpileup -B -f fastafile -R bedfile bamfile | 
     # bcftools call -mV indels -A --ploidy 1 -o tr_samp_oar.vcf
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("Snp calling is starting ...")
     variant_calls = pysam.mpileup("-f", ref_file, "-B", "-l", transv_poly_file, sorted_aligned_sample_file)
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("Snp calling finished ...")
     return variant_calls
 
@@ -207,7 +209,7 @@ def convert_bam_to_bed(bam_file, bam_to_bed_file):
     # bedtools bamtobed -i bamfile > samp_oarbtb.bed 
     sample_in_bam = pybedtools.example_bedtool(bam_file)
     sample_in_bed = sample_in_bam.bam_to_bed()
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         write_to_file(sample_in_bed, bam_to_bed_file) 
 
     return sample_in_bed
@@ -232,11 +234,11 @@ def find_intersections(shared, transv, uniq_intersections_sample_file):
     intersects = intersects.value_counts().reset_index(name='counts')
     intersects = intersects.sort_values(by=["name"])
 
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("\n\n >>> INTERSECTIONS <<<")
         print(intersects.head(10))
 
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         intersects.to_csv(uniq_intersections_sample_file, header=False, sep="\t", mode="w")
         
     return intersects
@@ -259,7 +261,7 @@ def insert_ref_and_alt_allele_numbers(intersects):
     all_intersects = filter_columns(all_intersects, ["counts", "blockCount"])
     all_intersects = all_intersects.sort_values(by=["id"])
     
-    if file_paths.DEBUG:
+    if settings.DEBUG:
         print("\n\n>>> ALL INTERSECTIONS <<<")
         print(all_intersects.head(5))
     return all_intersects
