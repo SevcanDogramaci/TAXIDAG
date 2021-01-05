@@ -1,24 +1,39 @@
+import sys
 import pysam
 import pybedtools
 
 from util import *
-from file_paths import *
+import settings
+
+if __name__ == "__main__":
+    from os import path, mkdir
+    
+    for arg in sys.argv:
+        if arg == "-d":
+            settings.DEBUG = True
+            
+    if not path.exists(settings.data_out_dir):
+        mkdir(settings.data_out_dir)
+    if not path.exists(settings.current_sample_data_out_dir):
+        mkdir(settings.current_sample_data_out_dir)
+    print("Debug Mode On\n" if settings.DEBUG else "Debug Mode Off\n")
+
 
 # samtools faidx sequence1.fasta
-pysam.faidx(oar_ref_file)
-pysam.faidx(chi_ref_file)
+pysam.faidx(settings.oar_ref_file)
+pysam.faidx(settings.chi_ref_file)
 
 
 # === STEP 1 ===
 # sort and index the sample's aligned sequence to the sheep's or goat's mtDNA reference
-sort_and_index_aligned_file(sorted_aligned_sample_to_oar_file, aligned_sample_to_oar_file)
-sort_and_index_aligned_file(sorted_aligned_sample_to_chi_file, aligned_sample_to_chi_file)
+sort_and_index_aligned_file(settings.sorted_aligned_sample_to_oar_file, settings.aligned_sample_to_oar_file)
+sort_and_index_aligned_file(settings.sorted_aligned_sample_to_chi_file, settings.aligned_sample_to_chi_file)
 # ==============
 
 
 # === STEP 2 ===
-variant_calls_oar = call_variants(oar_ref_file, transv_poly_oar_file, sorted_aligned_sample_to_oar_file)
-variant_calls_chi = call_variants(chi_ref_file, transv_poly_chi_file, sorted_aligned_sample_to_chi_file)
+variant_calls_oar = call_variants(settings.oar_ref_file, settings.transv_poly_oar_file, settings.sorted_aligned_sample_to_oar_file)
+variant_calls_chi = call_variants(settings.chi_ref_file, settings.transv_poly_chi_file, settings.sorted_aligned_sample_to_chi_file)
 # === ====== ===
 
 
@@ -29,41 +44,31 @@ variant_calls_chi = filter_variant_calls_from_pileup_format(variant_calls_chi)
 
 # awk '!( $3 == "T" && $4 == "C" || $3 == "C" && $4 == "T" || 
 #         $3 == "A" && $4 == "G" || $3 == "G" && $4 == "A" )
-print("\n\n>>> FILTER POSTMORTEM TRANSITIONS FOR OAR<<<")
 variant_calls_oar = filter_post_mortem_transitions(variant_calls_oar)
-print(variant_calls_oar.head(20))
-
-print("\n\n>>> FILTER POSTMORTEM TRANSITIONS FOR CHI<<<")
 variant_calls_chi = filter_post_mortem_transitions(variant_calls_chi)
-print(variant_calls_chi.head(20))
 
 
 # awk '{print $1,$2-1,$2,$4}'
-print("\n\n>>> CREATE BED FILE FOR OAR<<<")
-variants_info_oar = get_variants_info(variant_calls_oar)
-variants_info_oar.to_csv(transv_sample_oar_file, header=False, index=False, sep="\t", mode="w")
-
-print("\n\n>>> CREATE BED FILE FOR CHI<<<")
-variants_info_chi = get_variants_info(variant_calls_chi)
-variants_info_chi.to_csv(transv_sample_chi_file, header=False, index=False, sep="\t", mode="w")
+variants_info_oar = get_variants_info(variant_calls_oar, settings.transv_sample_oar_file)
+variants_info_chi = get_variants_info(variant_calls_chi, settings.transv_sample_chi_file)
 # === ====== ===
 
 
 # === STEP 4 ===
-sample_oar_in_bed = convert_bam_to_bed(sorted_aligned_sample_to_oar_file, sample_oar_bamtobed_file)   
-sample_chi_in_bed = convert_bam_to_bed(sorted_aligned_sample_to_chi_file, sample_chi_bamtobed_file)
+sample_oar_in_bed = convert_bam_to_bed(settings.sorted_aligned_sample_to_oar_file, settings.sample_oar_bamtobed_file)   
+sample_chi_in_bed = convert_bam_to_bed(settings.sorted_aligned_sample_to_chi_file, settings.sample_chi_bamtobed_file)
 # === ====== ===
 
 
 # === STEP 5 ===
 # sharead.R
-find_shared_reads(sample_chi_in_bed, sample_oar_in_bed)
+shared_chi, shared_oar = find_shared_reads(sample_chi_in_bed, sample_oar_in_bed)
 # === ====== ===
 
 
 # === STEP 6 ===
-intersect_oar = find_intersections(shared_oar_file, transv_sample_oar_file, uniq_intersections_sample_oar_file)
-intersect_chi = find_intersections(shared_chi_file, transv_sample_chi_file, uniq_intersections_sample_chi_file)
+intersect_oar = find_intersections(shared_oar, variants_info_oar, settings.uniq_intersections_sample_oar_file)
+intersect_chi = find_intersections(shared_chi, variants_info_chi, settings.uniq_intersections_sample_chi_file)
 # === ====== ===
 
 
