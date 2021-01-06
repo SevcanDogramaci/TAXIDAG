@@ -21,7 +21,7 @@ For further details, please look at the poster in docs folder.
 
 → **Required libraries**
 
-Available in requirements.txt. Install with pip install -r requirements.txt.
+Available in ```requirements.txt```. Install with ```pip install -r requirements.txt```.
 
 ### File Structure
 
