@@ -21,6 +21,8 @@ For further details, please look at the poster in docs folder.
 
 → **Required libraries**
 
+Available in requirements.txt. Install with pip install -r requirements.txt.
+
 ### File Structure
 
 **data/ :**
@@ -44,9 +46,6 @@ For further details, please look at the poster in docs folder.
 - File locations are set here !
 - Change current_sample_dir to the directory name of sample data in tmp folder.
 - Change aligned_sample_to_oar_file, aligned_sample_to_chi_file to sample data files' names.
-
-Available in ```requirements.txt```. 
-Install with ```pip install -r requirements.txt```.
 
 ### **How to install the program via GitHub**
 
